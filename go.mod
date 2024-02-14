@@ -1,3 +1,3 @@
-module spirit_dns_public
+module github.com/fh550671224/spirit_dns_public
 
 go 1.18
