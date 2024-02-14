@@ -34,18 +34,17 @@ func (client *RedisClient) InitRedis(addr string) error {
 	if err != nil {
 		return fmt.Errorf("connecting to Redis err:%v", err)
 	}
-	fmt.Println("Connected to Redis:", pong)
+	log.Printf("Info: Connected to Redis:%v", pong)
 
 	client.Client = c
 	return nil
 }
 
-func (client *RedisClient) CloseRedis() error {
+func (client *RedisClient) CloseRedis() {
 	err := client.Close()
 	if err != nil {
-		return fmt.Errorf("closing connection err: %v", err)
+		log.Printf("Warning: closing connection err: %v\n", err)
 	}
-	return nil
 }
 
 func (client *RedisClient) setRedis(ctx context.Context, key string, value string, expiration time.Duration) error {
