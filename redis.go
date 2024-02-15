@@ -118,7 +118,11 @@ func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) (
 	var woList []wrappedObj
 	for _, z := range zList {
 		var wo wrappedObj
-		err = json.Unmarshal(z.Member.([]byte), &wo)
+		zm, ok := z.Member.(string)
+		if !ok {
+			return nil, fmt.Errorf("unable to convert zm: %v", z.Member)
+		}
+		err = json.Unmarshal([]byte(zm), &wo)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshaling z.member err: %v", err)
 		}

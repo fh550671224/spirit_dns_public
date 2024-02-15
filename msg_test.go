@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"context"
 	"github.com/miekg/dns"
 	"log"
 	"net"
@@ -126,4 +127,16 @@ func TestTtt(t *testing.T) {
 	aa := strings.Split(a, ",")
 
 	t.Log(aa)
+}
+
+func TestGetRedisCacheByKey(t *testing.T) {
+	var c RedisClient
+	ctx := context.Background()
+	c.InitRedis(ctx, "localhost:6379")
+
+	c.GetRedisCacheByKey(ctx, Question{
+		Name:   "baidu.com",
+		QType:  1,
+		QClass: 1,
+	})
 }
