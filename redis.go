@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"log"
-	"math"
-
 	"time"
 )
 
@@ -20,7 +18,7 @@ type RedisClient struct {
 	*redis.Client
 }
 
-func (client *RedisClient) InitRedis(addr string) error {
+func (client *RedisClient) InitRedis(ctx context.Context, addr string) error {
 	// 创建Redis连接
 	c := redis.NewClient(&redis.Options{
 		Addr:     addr, // Redis服务器地址
@@ -29,7 +27,6 @@ func (client *RedisClient) InitRedis(addr string) error {
 	})
 
 	// 使用Ping命令检查连接是否正常
-	ctx := context.Background()
 	pong, err := c.Ping(ctx).Result()
 	if err != nil {
 		return fmt.Errorf("connecting to Redis err:%v", err)
@@ -52,8 +49,6 @@ func (client *RedisClient) setRedis(ctx context.Context, key string, value strin
 	if err != nil {
 		return fmt.Errorf("setting key err: %v", err)
 	}
-
-	log.Printf("setting key(%v) success", key)
 	return nil
 }
 
@@ -71,58 +66,64 @@ func (client *RedisClient) getRedis(ctx context.Context, key string) (string, in
 	return val, int(ttl), nil
 }
 
-func (client *RedisClient) StoreRedisCache(key Question, answers []RR) error {
-	var ttl uint32
-	ttl = math.MaxUint32
-	for _, a := range answers {
-		if ttl > a.Header().Ttl {
-			ttl = a.Header().Ttl
-		}
-	}
-
-	keyStr, err := json.Marshal(key)
+func (client *RedisClient) StoreRedisCache(ctx context.Context, q Question, answers []RR) error {
+	qStr, err := json.Marshal(q)
 	if err != nil {
-		return fmt.Errorf("marshaling key err: %v", err)
+		return fmt.Errorf("marshaling q err: %v", err)
 	}
 
-	var woList []wrappedObj
 	for _, a := range answers {
-		woList = append(woList, wrappedObj{
+		wo := wrappedObj{
 			Type:    a.Header().Rrtype,
 			Payload: a,
-		})
-	}
+		}
+		value, err := json.Marshal(&wo)
+		if err != nil {
+			return fmt.Errorf("marshaling value err: %v", err)
+		}
 
-	woListStr, err := json.Marshal(&woList)
-	if err != nil {
-		return fmt.Errorf("marshaling answers err: %v", err)
+		// 当前时间戳
+		now := time.Now().Unix()
 
-	}
-
-	err = client.setRedis(context.Background(), string(keyStr), string(woListStr), time.Duration(ttl)*time.Second)
-	if err != nil {
-		return fmt.Errorf("client.SetRedis err: %v", err)
+		err = client.ZAdd(ctx, string(qStr), &redis.Z{
+			Score:  float64(now + int64(a.Header().Ttl)),
+			Member: string(value),
+		}).Err()
+		if err != nil {
+			return fmt.Errorf("ZAdd err: %v", err)
+		}
 	}
 
 	return nil
 }
 
-func (client *RedisClient) GetRedisCache(key Question) ([]RR, error) {
-	keyStr, err := json.Marshal(key)
+func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) ([]RR, error) {
+	qStr, err := json.Marshal(q)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling key err: %v", err)
+		return nil, fmt.Errorf("marshaling q err: %v", err)
 	}
 
-	woListStr, _, err := client.getRedis(context.Background(), string(keyStr))
+	// 当前时间戳
+	now := time.Now().Unix()
+
+	zList, err := client.ZRangeByScoreWithScores(ctx, string(qStr), &redis.ZRangeBy{
+		Min: fmt.Sprintf("%d", now),
+		Max: "+inf",
+	}).Result()
 	if err != nil {
-		return nil, fmt.Errorf("client.GetRedis err: %v", err)
+		return nil, fmt.Errorf("ZRangeByScoreWithScores err: %v", err)
 
 	}
 
 	var woList []wrappedObj
-	err = json.Unmarshal([]byte(woListStr), &woList)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshaling key err: %v", err)
+	for _, z := range zList {
+		var wo wrappedObj
+		err = json.Unmarshal(z.Member.([]byte), &wo)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshaling z.member err: %v", err)
+		}
+
+		woList = append(woList, wo)
 	}
 
 	var answers []RR
@@ -144,4 +145,30 @@ func (client *RedisClient) GetRedisCache(key Question) ([]RR, error) {
 	}
 
 	return answers, nil
+}
+
+func (client *RedisClient) GetRedisCacheAllData(ctx context.Context) (map[Question][]RR, error) {
+	keyList, err := client.Keys(ctx, "*").Result()
+	if err != nil {
+		return nil, fmt.Errorf("client.GetRedis err: %v", err)
+	}
+
+	res := make(map[Question][]RR)
+
+	for _, key := range keyList {
+		var q Question
+		err = json.Unmarshal([]byte(key), &q)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshaling key err: %v", err)
+		}
+
+		rrs, err := client.GetRedisCacheByKey(ctx, q)
+		if err != nil {
+			return nil, fmt.Errorf("GetRedisCacheByKey err: %v", err)
+		}
+
+		res[q] = rrs
+	}
+
+	return res, nil
 }

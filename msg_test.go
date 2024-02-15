@@ -4,6 +4,7 @@ import (
 	"github.com/miekg/dns"
 	"log"
 	"net"
+	"strings"
 	"testing"
 )
 
@@ -118,4 +119,11 @@ func TestPack(t *testing.T) {
 	}
 	t.Log(_data)
 
+}
+
+func TestTtt(t *testing.T) {
+	a := "1,2,2,3,4,5,"
+	aa := strings.Split(a, ",")
+
+	t.Log(aa)
 }
