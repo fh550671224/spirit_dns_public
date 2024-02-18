@@ -115,7 +115,7 @@ func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) (
 
 	}
 
-	var woList []wrappedObj
+	var answers []RR
 	for _, z := range zList {
 		var wo wrappedObj
 		zm, ok := z.Member.(string)
@@ -127,11 +127,6 @@ func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) (
 			return nil, fmt.Errorf("unmarshaling z.member err: %v", err)
 		}
 
-		woList = append(woList, wo)
-	}
-
-	var answers []RR
-	for _, wo := range woList {
 		if rrFunc, ok := TypeToRR[wo.Type]; ok {
 			payloadStr, err := json.Marshal(wo.Payload)
 			if err != nil {
@@ -142,6 +137,9 @@ func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) (
 			if err != nil {
 				return nil, fmt.Errorf("unmarshaling payload err: %v", err)
 			}
+
+			rr.Header().Ttl = uint32(z.Score - float64(now))
+
 			answers = append(answers, rr)
 		} else {
 			return nil, fmt.Errorf("unsupported rr type %d", wo.Type)
@@ -175,4 +173,35 @@ func (client *RedisClient) GetRedisCacheAllData(ctx context.Context) (map[Questi
 	}
 
 	return res, nil
+}
+
+func (client *RedisClient) CronRefreshData(ctx context.Context) {
+	var err error
+
+	for {
+		var cursor uint64
+
+		for {
+			var keys []string
+			keys, cursor, err = client.Scan(ctx, cursor, "*", 10).Result()
+			if err != nil {
+				log.Printf("CronRefreshData Scan err: %v", err)
+			}
+
+			// 当前时间戳
+			now := time.Now().Unix()
+			for _, key := range keys {
+				_, err = client.ZRemRangeByScore(ctx, key, "-inf", fmt.Sprintf("%d", now)).Result()
+				if err != nil {
+					log.Printf("CronRefreshData ZRemRangeByScore err: %v", err)
+				}
+			}
+
+			if cursor == 0 {
+				break
+			}
+		}
+
+		time.Sleep(1 * time.Second)
+	}
 }
