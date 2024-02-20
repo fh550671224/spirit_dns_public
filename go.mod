@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/miekg/dns v1.1.58
+	github.com/streadway/amqp v1.1.0
 )
 
 require (
