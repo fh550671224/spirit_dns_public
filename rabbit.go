@@ -55,7 +55,7 @@ func (client *RabbitClient) Write(queueName string, msg []byte) error {
 		return fmt.Errorf("QueueDeclare err:%v", err)
 	}
 
-	err = client.Publish(amqp.ExchangeDirect, q.Name, false, false, amqp.Publishing{
+	err = client.Publish("", q.Name, false, false, amqp.Publishing{
 		ContentType: "application/json",
 		Body:        msg,
 	})
