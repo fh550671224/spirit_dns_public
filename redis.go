@@ -18,6 +18,10 @@ type RedisClient struct {
 	*redis.Client
 }
 
+func (client *RedisClient) IsOk() bool {
+	return client.Client != nil
+}
+
 func (client *RedisClient) InitRedis(ctx context.Context, addr string) error {
 	// 创建Redis连接
 	c := redis.NewClient(&redis.Options{
@@ -38,7 +42,7 @@ func (client *RedisClient) InitRedis(ctx context.Context, addr string) error {
 }
 
 func (client *RedisClient) CloseRedis() {
-	if client.Client == nil {
+	if !client.IsOk() {
 		return
 	}
 	err := client.Close()
@@ -48,7 +52,7 @@ func (client *RedisClient) CloseRedis() {
 }
 
 func (client *RedisClient) setRedis(ctx context.Context, key string, value string, expiration time.Duration) error {
-	if client.Client == nil {
+	if !client.IsOk() {
 		return fmt.Errorf("client is nil")
 	}
 	err := client.Set(ctx, key, value, expiration).Err()
@@ -76,7 +80,7 @@ func (client *RedisClient) getRedis(ctx context.Context, key string) (string, in
 }
 
 func (client *RedisClient) StoreRedisCache(ctx context.Context, q Question, answers []RR) error {
-	if client.Client == nil {
+	if !client.IsOk() {
 		return fmt.Errorf("client is nil")
 	}
 
@@ -111,7 +115,7 @@ func (client *RedisClient) StoreRedisCache(ctx context.Context, q Question, answ
 }
 
 func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) ([]RR, error) {
-	if client.Client == nil {
+	if !client.IsOk() {
 		return nil, fmt.Errorf("client is nil")
 	}
 
@@ -167,7 +171,7 @@ func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) (
 }
 
 func (client *RedisClient) GetRedisCacheAllData(ctx context.Context) (map[Question][]RR, error) {
-	if client.Client == nil {
+	if !client.IsOk() {
 		return nil, fmt.Errorf("client is nil")
 	}
 
@@ -197,7 +201,7 @@ func (client *RedisClient) GetRedisCacheAllData(ctx context.Context) (map[Questi
 }
 
 func (client *RedisClient) CronRefreshData(ctx context.Context) {
-	if client.Client == nil {
+	if !client.IsOk() {
 		return
 	}
 

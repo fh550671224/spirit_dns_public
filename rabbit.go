@@ -16,6 +16,10 @@ type RabbitClient struct {
 	*amqp.Channel
 }
 
+func (client *RabbitClient) IsOk() bool {
+	return client.Channel != nil && client.Connection != nil
+}
+
 func (client *RabbitClient) Init(username string, password string, addr string) error {
 	conn, err := amqp.Dial("amqp://" + username + ":" + password + "@" + addr + "/")
 	if err != nil {
@@ -34,7 +38,7 @@ func (client *RabbitClient) Init(username string, password string, addr string) 
 }
 
 func (client *RabbitClient) CloseRabbit() {
-	if client.Channel == nil || client.Connection == nil {
+	if !client.IsOk() {
 		return
 	}
 
@@ -49,7 +53,7 @@ func (client *RabbitClient) CloseRabbit() {
 }
 
 func (client *RabbitClient) Write(queueName string, msg []byte) error {
-	if client.Channel == nil || client.Connection == nil {
+	if !client.IsOk() {
 		return fmt.Errorf("client is nil")
 	}
 
