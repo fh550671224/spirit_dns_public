@@ -11,11 +11,6 @@ const (
 	SpiritDNSBackendLog = "spirit_dns_backend_log"
 )
 
-type SpiritDNSLogMsg struct {
-	Addr string
-	Data Msg
-}
-
 type RabbitClient struct {
 	*amqp.Connection
 	*amqp.Channel
@@ -39,6 +34,10 @@ func (client *RabbitClient) Init(username string, password string, addr string) 
 }
 
 func (client *RabbitClient) CloseRabbit() {
+	if client.Channel == nil || client.Connection == nil {
+		return
+	}
+
 	err := client.Channel.Close()
 	if err != nil {
 		log.Printf("RabbitMQ Channel Close err:%v", err)
@@ -50,6 +49,10 @@ func (client *RabbitClient) CloseRabbit() {
 }
 
 func (client *RabbitClient) Write(queueName string, msg []byte) error {
+	if client.Channel == nil || client.Connection == nil {
+		return fmt.Errorf("client is nil")
+	}
+
 	q, err := client.QueueDeclare(queueName, false, true, false, false, nil)
 	if err != nil {
 		return fmt.Errorf("QueueDeclare err:%v", err)
@@ -65,22 +68,3 @@ func (client *RabbitClient) Write(queueName string, msg []byte) error {
 
 	return nil
 }
-
-//
-//func (client RabbitClient) Listen(queueName string) {
-//	q, err := client.QueueDeclare(queueName, false, true, false, false, nil)
-//	if err != nil {
-//		log.Printf("QueueDeclare err:%v", err)
-//	}
-//	msgs, err := client.Consume(q.Name, "", false, false, false, false, nil)
-//	if err != nil {
-//		log.Printf("QueueDeclare err:%v", err)
-//	}
-//
-//	go func() {
-//		for d := range msgs {
-//			log.Printf("Received a message: %s", d.Body)
-//			// TODO
-//		}
-//	}()
-//}

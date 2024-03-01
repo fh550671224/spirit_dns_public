@@ -38,6 +38,9 @@ func (client *RedisClient) InitRedis(ctx context.Context, addr string) error {
 }
 
 func (client *RedisClient) CloseRedis() {
+	if client.Client == nil {
+		return
+	}
 	err := client.Close()
 	if err != nil {
 		log.Printf("Warning: closing connection err: %v\n", err)
@@ -45,6 +48,9 @@ func (client *RedisClient) CloseRedis() {
 }
 
 func (client *RedisClient) setRedis(ctx context.Context, key string, value string, expiration time.Duration) error {
+	if client.Client == nil {
+		return fmt.Errorf("client is nil")
+	}
 	err := client.Set(ctx, key, value, expiration).Err()
 	if err != nil {
 		return fmt.Errorf("setting key err: %v", err)
@@ -53,6 +59,9 @@ func (client *RedisClient) setRedis(ctx context.Context, key string, value strin
 }
 
 func (client *RedisClient) getRedis(ctx context.Context, key string) (string, int, error) {
+	if client.Client == nil {
+		return "", 0, fmt.Errorf("client is nil")
+	}
 	val, err := client.Get(ctx, key).Result()
 	if err != nil {
 		return "", 0, fmt.Errorf("getting value err: %v", err)
@@ -67,6 +76,10 @@ func (client *RedisClient) getRedis(ctx context.Context, key string) (string, in
 }
 
 func (client *RedisClient) StoreRedisCache(ctx context.Context, q Question, answers []RR) error {
+	if client.Client == nil {
+		return fmt.Errorf("client is nil")
+	}
+
 	qStr, err := json.Marshal(q)
 	if err != nil {
 		return fmt.Errorf("marshaling q err: %v", err)
@@ -98,6 +111,10 @@ func (client *RedisClient) StoreRedisCache(ctx context.Context, q Question, answ
 }
 
 func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) ([]RR, error) {
+	if client.Client == nil {
+		return nil, fmt.Errorf("client is nil")
+	}
+
 	qStr, err := json.Marshal(q)
 	if err != nil {
 		return nil, fmt.Errorf("marshaling q err: %v", err)
@@ -150,6 +167,10 @@ func (client *RedisClient) GetRedisCacheByKey(ctx context.Context, q Question) (
 }
 
 func (client *RedisClient) GetRedisCacheAllData(ctx context.Context) (map[Question][]RR, error) {
+	if client.Client == nil {
+		return nil, fmt.Errorf("client is nil")
+	}
+
 	keyList, err := client.Keys(ctx, "*").Result()
 	if err != nil {
 		return nil, fmt.Errorf("client.GetRedis err: %v", err)
@@ -176,6 +197,10 @@ func (client *RedisClient) GetRedisCacheAllData(ctx context.Context) (map[Questi
 }
 
 func (client *RedisClient) CronRefreshData(ctx context.Context) {
+	if client.Client == nil {
+		return
+	}
+
 	var err error
 
 	for {
