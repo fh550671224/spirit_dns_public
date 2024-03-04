@@ -29,8 +29,12 @@ const (
 )
 
 const (
-	RcodeSuccess     = 0 // NoError   - No Error                          [DNS]
-	RcodeFormatError = 1 // FormErr   - Format Error                      [DNS]
+	RcodeSuccess        = 0
+	RcodeFormatError    = 1
+	RcodeServerFailure  = 2
+	RcodeNameError      = 3
+	RcodeNotImplemented = 4
+	RcodeRefused        = 5
 )
 
 var TypeToRR = map[uint16]func() RR{
