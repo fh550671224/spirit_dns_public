@@ -55,7 +55,7 @@ func packDataAAAA(a net.IP, msg []byte, off int) (off1 int, err error) {
 	return off, nil
 }
 
-func packDomainName(name string, buf []byte, off int, compression map[string]uint16) (int, error) {
+func packDomainName(name string, msg []byte, off int, compression map[string]uint16) (int, error) {
 	var begin int
 
 	pointer := -1
@@ -78,10 +78,10 @@ loop:
 			}
 
 			// store label
-			buf[off] = byte(labelLen)
+			msg[off] = byte(labelLen)
 			ss := name[begin:i]
 			_ = ss
-			copy(buf[off+1:], name[begin:i])
+			copy(msg[off+1:], name[begin:i])
 
 			off += 1 + labelLen
 			begin = i + 1
@@ -93,11 +93,11 @@ loop:
 	}
 
 	if pointer != -1 {
-		binary.BigEndian.PutUint16(buf[off:], uint16(pointer|0xC000))
+		binary.BigEndian.PutUint16(msg[off:], uint16(pointer|0xC000))
 		return off + 2, nil
 	}
 
-	buf[off] = 0
+	msg[off] = 0
 	return off + 1, nil
 }
 
@@ -165,6 +165,47 @@ func packUint32(i uint32, buf []byte, off int) (int, error) {
 
 	binary.BigEndian.PutUint32(buf[off:], i)
 	return off + 4, nil
+}
+
+func packRRSlice(rrs []RR, buf []byte, off int, compression map[string]uint16) (off1 int, err error) {
+	for _, rr := range rrs {
+		off, err = packDomainName(rr.Header().Name, buf, off, compression)
+		if err != nil {
+			return off, err
+		}
+
+		off, err = packUint16(rr.Header().Rrtype, buf, off)
+		if err != nil {
+			return off, err
+		}
+
+		off, err = packUint16(rr.Header().Class, buf, off)
+		if err != nil {
+			return off, err
+		}
+
+		off, err = packUint32(rr.Header().Ttl, buf, off)
+		if err != nil {
+			return off, err
+		}
+
+		// set rdLength later
+		offAtRdLengh := off
+		off += 2
+
+		off, err = rr.pack(buf, off, compression)
+		if err != nil {
+			return off, err
+		}
+
+		rdLength := off - offAtRdLengh - 2
+		_, err = packUint16(uint16(rdLength), buf, offAtRdLengh)
+		if err != nil {
+			return off, err
+		}
+	}
+
+	return off, nil
 }
 
 func unpackUint16(buf []byte, off int) (uint16, int, error) {
@@ -250,4 +291,34 @@ func unpackRR(rh RR_Header, data []byte, off int) (RR, int, error) {
 	}
 
 	return rr, off, nil
+}
+
+func unpackTxt(msg []byte, off int, end int) ([]string, int, error) {
+	var txt []string
+
+	for off < end {
+		l := int(msg[off])
+		off++
+		t := string(msg[off : off+l])
+		txt = append(txt, t)
+		off += l
+	}
+
+	if off != end {
+		return nil, 0, fmt.Errorf("offset not equal to end")
+	}
+
+	return txt, off, nil
+}
+
+func packTxt(txt []string, msg []byte, off int) (off1 int, err error) {
+	for _, t := range txt {
+		l := len(t)
+		msg[off] = uint8(l)
+		off++
+		copy(msg[off:], t)
+		off += l
+	}
+
+	return off, nil
 }

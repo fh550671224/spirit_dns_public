@@ -24,24 +24,29 @@ type NS struct {
 	Ns  string
 }
 
-func (rr *NS) Header() *RR_Header {
-	return &rr.Hdr
+type TXT struct {
+	Hdr RR_Header
+	Txt []string
 }
 
-func (rr *NS) pack(msg []byte, off int, compression map[string]uint16) (off1 int, err error) {
-	off, err = packDomainName(rr.Ns, msg, off, compression)
-	if err != nil {
-		return 0, err
-	}
-
-	return off, nil
+type MX struct {
+	Hdr        RR_Header
+	Preference uint16
+	Exchange   string
 }
 
-func (rr *NS) unpack(msg []byte, off int) (off1 int, err error) {
-	rr.Ns, off, err = unpackDomainName(msg, off)
-	if err != nil {
-		return 0, err
-	}
+type SOA struct {
+	Hdr     RR_Header
+	Mname   string
+	Rname   string
+	Serial  uint32
+	Refresh uint32
+	Retry   uint32
+	Expire  uint32
+	MinTtl  uint32
+}
 
-	return off, nil
+type PTR struct {
+	Hdr           RR_Header
+	PtrDomainName string
 }

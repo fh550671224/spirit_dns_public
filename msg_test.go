@@ -140,3 +140,29 @@ func TestGetRedisCacheByKey(t *testing.T) {
 		QClass: 1,
 	})
 }
+
+func TestPackTxt(t *testing.T) {
+	txt := []string{
+		"111",
+		"2222",
+		"3333",
+	}
+
+	buf := make([]byte, 100)
+
+	i, err := packTxt(txt, buf, 0)
+	if err != nil {
+		return
+	}
+	t.Log(i)
+}
+func TestUnpackTxt(t *testing.T) {
+
+	buf := []byte{3, 49, 49, 49, 4, 49, 49, 49, 49}
+
+	txt, _, err := unpackTxt(buf, 0, 9)
+	if err != nil {
+		return
+	}
+	t.Log(txt)
+}
