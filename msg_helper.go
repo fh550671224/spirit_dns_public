@@ -127,7 +127,8 @@ loop:
 			off += c
 		case 0xC0:
 			// pointer
-			c1 := int(buf[off])
+			//c1 := int(buf[off])
+			c1 := uint16(c)<<8 | uint16(buf[off])
 			off++
 			if ptr == 0 {
 				off1 = off
@@ -135,7 +136,7 @@ loop:
 			if ptr++; ptr > 126 {
 				return "", 0, fmt.Errorf("infinite loop")
 			}
-			off = c1 & 0x3F
+			off = int(c1 & 0x3FFF)
 		}
 	}
 	if ptr == 0 {
