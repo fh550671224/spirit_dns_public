@@ -17,11 +17,12 @@ const (
 	TypeNone  uint16 = 0
 	TypeA     uint16 = 1
 	TypeNS    uint16 = 2
-	TypeMD    uint16 = 3
-	TypeMF    uint16 = 4
 	TypeCNAME uint16 = 5
+	TypeSOA   uint16 = 6
+	TypePTR   uint16 = 12
+	TypeMX    uint16 = 15
+	TypeTXT   uint16 = 16
 	TypeAAAA  uint16 = 28
-	TypeOPT   uint16 = 41
 )
 
 const (
@@ -42,4 +43,8 @@ var TypeToRR = map[uint16]func() RR{
 	TypeAAAA:  func() RR { return new(AAAA) },
 	TypeNS:    func() RR { return new(NS) },
 	TypeCNAME: func() RR { return new(CNAME) },
+	TypeSOA:   func() RR { return new(SOA) },
+	TypePTR:   func() RR { return new(PTR) },
+	TypeMX:    func() RR { return new(MX) },
+	TypeTXT:   func() RR { return new(TXT) },
 }
