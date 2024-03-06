@@ -82,7 +82,7 @@ func (h *Header) pack(buf []byte, off int) (int, error) {
 }
 
 func (msg *Msg) len() int {
-	l := 6 // Header
+	l := HeaderSize
 	for _, q := range msg.Question {
 		l += q.len()
 	}
