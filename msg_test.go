@@ -166,3 +166,9 @@ func TestUnpackTxt(t *testing.T) {
 	}
 	t.Log(txt)
 }
+
+func TestPackDataAAAA(t *testing.T) {
+	a := net.ParseIP("2607:f8b0:400a:804::200e")
+	b := make([]byte, 100)
+	packDataAAAA(a, b, 0)
+}

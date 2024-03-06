@@ -45,7 +45,7 @@ func packDataAAAA(a net.IP, msg []byte, off int) (off1 int, err error) {
 		if off+net.IPv4len > len(msg) {
 			return len(msg), fmt.Errorf("overflow packing a")
 		}
-		copy(msg[off:], a.To4())
+		copy(msg[off:], a.To16())
 		off += net.IPv6len
 	case 0:
 		// allowed
