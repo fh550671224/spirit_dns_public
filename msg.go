@@ -48,6 +48,10 @@ func (q *Question) pack(buf []byte, off int, compression map[string]uint16) (int
 	return off, nil
 }
 
+func (q *Question) len() int {
+	return 4 + getDomainNameLen(q.Name)
+}
+
 func (h *Header) pack(buf []byte, off int) (int, error) {
 	off, err := packUint16(h.Id, buf, off)
 	if err != nil {
@@ -77,6 +81,24 @@ func (h *Header) pack(buf []byte, off int) (int, error) {
 	return off, nil
 }
 
+func (msg *Msg) len() int {
+	l := 6 // Header
+	for _, q := range msg.Question {
+		l += q.len()
+	}
+	for _, rr := range msg.Answer {
+		l += rr.len()
+	}
+	for _, rr := range msg.Ns {
+		l += rr.len()
+	}
+	for _, rr := range msg.Extra {
+		l += rr.len()
+	}
+
+	return l
+}
+
 func (msg *Msg) Pack() (buf []byte, err error) {
 	var dh Header
 	dh.Id = msg.Id
@@ -101,8 +123,7 @@ func (msg *Msg) Pack() (buf []byte, err error) {
 	dh.Nscount = uint16(len(msg.Ns))
 	dh.Arcount = uint16(len(msg.Extra))
 
-	// TODO calculate length without compression
-	buf = make([]byte, 512)
+	buf = make([]byte, msg.len())
 
 	off := 0
 
@@ -214,13 +235,4 @@ func (msg *Msg) SetQuestion(name string, qtype uint16) {
 		QType:  qtype,
 		QClass: ClassINET,
 	})
-}
-
-func (msg *Msg) IsInvalid() bool {
-	if msg.MsgHdr.Response {
-		if len(msg.Answer) == 0 && len(msg.Ns) == 0 {
-			return true
-		}
-	}
-	return false
 }

@@ -6,6 +6,8 @@ type RR interface {
 	pack(buf []byte, off int, compression map[string]uint16) (off1 int, err error)
 
 	unpack(msg []byte, off int) (off1 int, err error)
+
+	len() (len int)
 }
 
 type RR_Header struct {
@@ -26,4 +28,8 @@ func (h *RR_Header) pack(msg []byte, off int, compression map[string]uint16) (of
 
 func (h *RR_Header) unpack(msg []byte, off int) (off1 int, err error) {
 	panic("dns: internal error: unpack should never be called on RR_Header")
+}
+
+func (h *RR_Header) len() (len int) {
+	return 8 + getDomainNameLen(h.Name)
 }

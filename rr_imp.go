@@ -4,10 +4,6 @@ func (rr *A) Header() *RR_Header {
 	return &rr.Hdr
 }
 
-func (rr *TXT) Header() *RR_Header {
-	return &rr.Hdr
-}
-
 func (rr *AAAA) Header() *RR_Header {
 	return &rr.Hdr
 }
@@ -30,6 +26,39 @@ func (rr *SOA) Header() *RR_Header {
 
 func (rr *PTR) Header() *RR_Header {
 	return &rr.Hdr
+}
+
+func (rr *TXT) Header() *RR_Header {
+	return &rr.Hdr
+}
+
+func (rr *A) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+
+func (rr *AAAA) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+
+func (rr *CNAME) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+
+func (rr *NS) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+func (rr *MX) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+func (rr *SOA) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+func (rr *PTR) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
+}
+
+func (rr *TXT) len() (len int) {
+	return rr.Header().len() + int(rr.Header().Rdlength)
 }
 
 func (rr *A) pack(msg []byte, off int, compression map[string]uint16) (off1 int, err error) {

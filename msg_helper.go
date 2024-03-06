@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 func unpackDataA(msg []byte, off int) (net.IP, int, error) {
@@ -322,4 +323,14 @@ func packTxt(txt []string, msg []byte, off int) (off1 int, err error) {
 	}
 
 	return off, nil
+}
+
+func getDomainNameLen(domain string) int {
+	splited := strings.Split(domain, ".")
+	l := len(splited)
+	for _, s := range splited {
+		l += len(s)
+	}
+
+	return l
 }
