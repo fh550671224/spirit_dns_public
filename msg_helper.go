@@ -332,5 +332,5 @@ func getDomainNameLen(domain string) int {
 		l += len(s)
 	}
 
-	return l
+	return l + 1
 }
